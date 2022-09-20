@@ -128,6 +128,7 @@ async function main() {
     // 57. to go package json and add to scripts "create-grc-token": "ts-node ./tokens/bld/index.ts" 
     // 58. add assets under candy-machine, includes the images png files and related json info files + the collection image and json 
     // 59. switch into tokens/candy-machine, then do 'sguar launch', answer all questions and it shoul do the rest
+    // 60 starting UI work for minting NFTs , adding script in package .json  to reset NFTs after use, go to directory and run sugar launch
 }
 
 main()

@@ -16,11 +16,12 @@ const WalletContextProvider: FC<{children: ReactNode}> = ({children}) => {
     // 23. create url and phantom, as the providers need them 
 
     const url = useMemo(() => clusterApiUrl('devnet'), [])
-    const phantom = new PhantomWalletAdapter()
+    // 84. add a useMemo here so this doesn't keep getting built , add autoconnect propr to WalletProvider below
+    const phantom = useMemo(() => new PhantomWalletAdapter(),[])
 
     return(
         <ConnectionProvider endpoint={url}>
-            <WalletProvider wallets={[phantom]}>
+            <WalletProvider wallets={[phantom]} autoConnect={true}>
                 <WalletModalProvider>
                     { children }
                 </WalletModalProvider>
