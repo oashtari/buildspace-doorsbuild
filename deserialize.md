@@ -1,4 +1,4 @@
-lib.rs
+LIB.RS
 
 // 1. imports
 use solana_program::{
@@ -71,8 +71,13 @@ fn add_movie_review(
 
 // Or this frontend: https://github.com/Unboxed-Software/solana-movie-frontend/tree/solution-update-reviews
 
-instruction.rs
+INSTRUCTION.RS
 
+// 5. imports
+use Borsh::{BorshDeserialize};
+use solana_program::{program_error::ProgramError};
+
+// 6. create enum 
 pub enum MovieInstruction {
     AddMovieReview {
         title: String,
@@ -109,3 +114,10 @@ struct MovieReviewPayload {
     rating: u8,
     description: String
 }
+
+
+EXERCISE
+
+solution code: https://beta.solpg.io/62b0ce53f6273245aca4f5b0
+
+front-end code to test it https://github.com/Unboxed-Software/solana-student-intros-frontend/tree/solution-serialize-instruction-data
