@@ -5,11 +5,12 @@
 import type { NextPage } from 'next'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import MainLayout from "../components/MainLayout"
-import { Container, VStack, Heading, Text, Image, Button, HStack } from '@chakra-ui/react'
+import { Container, VStack, Heading, Text, Image, Button, HStack, Box } from '@chakra-ui/react'
 import {MouseEventHandler, useCallback, useEffect, useState, useMemo} from 'react'
 import { ArrowForwardIcon } from '@chakra-ui/icons'
 import { PublicKey } from "@solana/web3.js"
 import { Metaplex, walletAdapterIdentity } from '@metaplex-foundation/js'
+import { useRouter } from 'next/router'
 
 
 
@@ -39,11 +40,16 @@ const NewMint: NextPage<NewMintProps> = ({mint}) => {
         })
     }, [mint, metaplex, walletAdapter])
     
+    // 102. 
+    const router = useRouter()
 
     // 76. add handleClick , ban borrow format from connected component 
     const handleClick: MouseEventHandler<HTMLButtonElement> = useCallback(
-        async(event) => {},
-        []
+        async(event) => {
+
+            router.push(`/stake?mint=${mint}&imageSrc=${metadata?.image}`)
+        },
+        [router, mint, metadata]
     )
 
   return (
@@ -64,7 +70,7 @@ const NewMint: NextPage<NewMintProps> = ({mint}) => {
             </Container>
             {/* 82. after getting metadata above, we can change src below  */}
             {/* the ?? "" simply reverts to an empty string if no image  */}
-            <Image src={metadata?.image ?? ""} alt=""/>
+            <Box boxSize="sm"><Image src={metadata?.image ?? ""} alt=""/></Box>
             <Button bgColor="accent" color="white" maxW="380px" onClick={handleClick}>
                 <HStack>
                     <Text>stake my puppy</Text>

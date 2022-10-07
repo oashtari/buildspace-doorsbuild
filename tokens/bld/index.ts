@@ -33,9 +33,22 @@ const TOKEN_IMAGE_NAME = "other_gracie.png"
 async function createGrcToken(
     connection: web3.Connection,
     payer: web3.Keypair,
+    // 101. this is related to step 32 in the solana nft staking program, in the ts/src/index.ts file for when the const stakeMint is created with a new web3 publickey
+    programId: web3.PublicKey,
+    // 102. then go to call site in main and pass in the public key, which is the program ID you get when you deploy the nft staking program
 ) {
+    // 103. go into the redeem function in nft staking, grab the auth word which is 'mint'
+    const [mintAuth] = await web3.PublicKey.findProgramAddress([Buffer.from("mint")], programId)
     // 44. create mint 
-    const tokenMint = await token.createMint(connection, payer, payer.publicKey, payer.publicKey, 2)
+    // 104. the const above replaces the 3rd argument below
+    const tokenMint = await token.createMint(
+        connection, 
+        payer, 
+        payer.publicKey, //replaced by mintAuth
+        // mintAuth, this was an error, still need it to be use for updating the metadata
+        payer.publicKey, 
+        2)
+
 
     // 45. create metaplex object 
     const metaplex = Metaplex.make(connection)
@@ -106,6 +119,16 @@ async function createGrcToken(
         [payer]
     )
 
+    // 105.
+    await token.setAuthority(
+        connection,
+        payer,
+        tokenMint,
+        payer.publicKey,
+        token.AuthorityType.MintTokens, 
+        mintAuth,
+    )
+
     // 54. last thing with this token is to write to file some of the info so we can find it later 
     fs.writeFileSync(
         "tokens/bld/cache.json",
@@ -123,7 +146,7 @@ async function main() {
     const payer = await initializeKeypair(connection)
 
     // 55. call token function 
-    await createGrcToken(connection, payer)
+    await createGrcToken(connection, payer, new web3.PublicKey("7RzKZfbNRxEdVFjMFSdj8Ydd8g6YH5LNdFJqyt1cB84s"))
     // 56. npm i --save-dev ts-node 
     // 57. to go package json and add to scripts "create-grc-token": "ts-node ./tokens/bld/index.ts" 
     // 58. add assets under candy-machine, includes the images png files and related json info files + the collection image and json 

@@ -30,10 +30,15 @@ const Connected:FC = () => {
     useEffect(() => {
         if(!metaplex) return
 
-        metaplex.candyMachines().findByAddress({
+        metaplex
+        .candyMachines()
+        .findByAddress({
             // 71. address from cache.json
-            address: new PublicKey("DHD5R8SuxNCBCcSvFTGCEpM56C76rRwhHjF7y6qQmBNT")
-        }).run()
+            address: new PublicKey(
+                process.env.NEXT_PUBLIC_CANDY_MACHINE_ADDRESS ?? ""
+                ),
+        })
+        .run()
         .then((candyMachine) => {
             console.log("Canndy Machine:", candyMachine)
             setCandyMachine(candyMachine)
