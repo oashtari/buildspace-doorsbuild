@@ -57,40 +57,40 @@ export const StakeOptionsDisplay = ({
   // 308. 
   const workspace = useWorkspace();
 
-  // 210.
-  const checkStakingStatus = useCallback(async () => {
-    // in here we can check whether we're still staking or not
-    // 309. add a check for workspace 
-    if (!walletAdapter.publicKey || !nftTokenAccount || !workspace.program) {
-      return;
-    }
+  // // 210.
+  // const checkStakingStatus = useCallback(async () => {
+  //   // in here we can check whether we're still staking or not
+  //   // 309. add a check for workspace 
+  //   if (!walletAdapter.publicKey || !nftTokenAccount || !workspace.program) {
+  //     return;
+  //   }
 
-    // 310. actually moved over to account.ts in utils
-    // const [pda] = PublicKey.findProgramAddressSync(
-    //   [walletAdapter.publicKey.toBuffer(), nftTokenAccount.toBuffer()], 
-    //   workspace.program.programId
-    //   )
-    // const account = workspace.program.account.userStakeInfo.fetch(pda);
+  //   // 310. actually moved over to account.ts in utils
+  //   // const [pda] = PublicKey.findProgramAddressSync(
+  //   //   [walletAdapter.publicKey.toBuffer(), nftTokenAccount.toBuffer()], 
+  //   //   workspace.program.programId
+  //   //   )
+  //   // const account = workspace.program.account.userStakeInfo.fetch(pda);
 
-    // 212.
-    try {
-      const account = await getStakeAccount(
-        // connection, ONLY CHANGE HERE in addition to check above
-        workspace.program,
-        walletAdapter.publicKey,
-        nftTokenAccount as PublicKey
-      );
+  //   // 212.
+  //   try {
+  //     const account = await getStakeAccount(
+  //       // connection, ONLY CHANGE HERE in addition to check above
+  //       workspace.program,
+  //       walletAdapter.publicKey,
+  //       nftTokenAccount as PublicKey
+  //     );
 
-      console.log("stake account: ", account);
+  //     console.log("stake account: ", account);
 
-      setIsStaking(account.state === 0);
-    } catch (e) {
-      console.log("error: ", e);
-    }
-  }, [walletAdapter, connection, nftTokenAccount]);
+  //     setIsStaking(account.state === 0);
+  //   } catch (e) {
+  //     console.log("error: ", e);
+  //   }
+  // }, [walletAdapter, connection, nftTokenAccount]);
 
   useEffect(() => {
-    checkStakingStatus();
+    // checkStakingStatus();
 
     if (nftData) {
       connection
@@ -182,7 +182,7 @@ export const StakeOptionsDisplay = ({
       } catch (e) {
         console.log("error: ", e);
       }
-      await checkStakingStatus();
+      // await checkStakingStatus();
     },
     [walletAdapter, connection]
   );
