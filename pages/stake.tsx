@@ -47,7 +47,7 @@ const Stake: NextPage<StakeProps> = ({ mint, imageSrc }) => {
     } catch (e) {
       console.log("error getting nft: ", e);
     }
-  }, [walletAdapter, connection, mint]);
+  }, [walletAdapter, connection, nftData]);
   // 108.
   return (
     <MainLayout>

@@ -5,6 +5,7 @@ import {ChakraProvider, extendTheme} from "@chakra-ui/react"
 
 // 24. import wallet context provider
 import WalletContextProvider from '../components/WalletContextProvider'
+import { WorkspaceProvider } from '../components/WorkspaceProvider'
 
 
 // 2. custom colors for the site
@@ -30,7 +31,9 @@ function MyApp({ Component, pageProps }: AppProps) {
   <ChakraProvider theme={theme}>
     {/* 25. add wallet context provider  */}
     <WalletContextProvider>
-      <Component {...pageProps} />
+      <WorkspaceProvider>
+        <Component {...pageProps} />
+      </WorkspaceProvider>
     </WalletContextProvider>
   </ChakraProvider>
   )

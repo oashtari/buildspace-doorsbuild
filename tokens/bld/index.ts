@@ -146,7 +146,7 @@ async function main() {
     const payer = await initializeKeypair(connection)
 
     // 55. call token function 
-    await createGrcToken(connection, payer, new web3.PublicKey("7RzKZfbNRxEdVFjMFSdj8Ydd8g6YH5LNdFJqyt1cB84s"))
+    await createGrcToken(connection, payer, new web3.PublicKey("46P4YDkAMoaC7WQR1N7fyoU8HPNjD1eZq85NmmMzdi55"))
     // 56. npm i --save-dev ts-node 
     // 57. to go package json and add to scripts "create-grc-token": "ts-node ./tokens/bld/index.ts" 
     // 58. add assets under candy-machine, includes the images png files and related json info files + the collection image and json 

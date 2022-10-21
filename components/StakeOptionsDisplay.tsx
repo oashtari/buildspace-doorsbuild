@@ -4,6 +4,7 @@ import {
   Button,
   useColorMode,
   useStatStyles,
+  useDrawerContext,
 } from "@chakra-ui/react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useCallback, useEffect, useState } from "react";
@@ -26,6 +27,9 @@ import { PublicKey, Transaction } from "@solana/web3.js";
 import { getStakeAccount } from "../utils/accounts";
 // 207. grab the program id from the last deploy of the nft staking program
 // 208.  grab the mint address from tokens/bld/cache.json and put in .env.local
+// 307. 
+import * as anchor from "@project-serum/anchor"
+import { useWorkspace } from "./WorkspaceProvider";
 
 // 110.
 export const StakeOptionsDisplay = ({
@@ -50,16 +54,29 @@ export const StakeOptionsDisplay = ({
   const [isStaking, setIsStaking] = useState(isStaked);
   const [nftTokenAccount, setNftTokenAccount] = useState<PublicKey>();
 
+  // 308. 
+  const workspace = useWorkspace();
+
   // 210.
   const checkStakingStatus = useCallback(async () => {
     // in here we can check whether we're still staking or not
-    if (!walletAdapter.publicKey) {
+    // 309. add a check for workspace 
+    if (!walletAdapter.publicKey || !nftTokenAccount || !workspace.program) {
       return;
     }
+
+    // 310. actually moved over to account.ts in utils
+    // const [pda] = PublicKey.findProgramAddressSync(
+    //   [walletAdapter.publicKey.toBuffer(), nftTokenAccount.toBuffer()], 
+    //   workspace.program.programId
+    //   )
+    // const account = workspace.program.account.userStakeInfo.fetch(pda);
+
     // 212.
     try {
       const account = await getStakeAccount(
-        connection,
+        // connection, ONLY CHANGE HERE in addition to check above
+        workspace.program,
         walletAdapter.publicKey,
         nftTokenAccount as PublicKey
       );
@@ -87,47 +104,61 @@ export const StakeOptionsDisplay = ({
     if (
       !walletAdapter.connected ||
       !walletAdapter.publicKey ||
-      !nftTokenAccount
+      !nftTokenAccount ||
+      !workspace.program
     ) {
       alert("please connect your wallet");
       return;
     }
+    
+    // 313. first add check for workspace program, then call stake.accounts, this is similar to what we wrote in our tests for anchor nft staking repo
+    const transaction = new Transaction();
 
+    transaction.add(
+      await workspace.program.methods.stake().accounts({
+        nftTokenAccount: nftTokenAccount,
+        nftMint: nftData.mint.address,
+        nftEdition: nftData.edition.address,
+        metadataProgram: METADATA_PROGRAM_ID,
+      }).instruction()
+    )
+
+    // uncertain about what happened to this code
     const [stakeAccount] = PublicKey.findProgramAddressSync(
       [walletAdapter.publicKey.toBuffer(), nftTokenAccount.toBuffer()],
       PROGRAM_ID
     );
+    
+    // this is now handled by init-if-needed in stake() , also pre anchor code
+    // const account = await connection.getAccountInfo(stakeAccount);
 
-    const transaction = new Transaction();
-
-    const account = await connection.getAccountInfo(stakeAccount);
-
-    if (!account) {
-      transaction.add(
-        createInitializeStakeAccountInstruction(
-          walletAdapter.publicKey,
-          nftTokenAccount,
-          PROGRAM_ID
-        )
-      );
-    }
-
-    const stakeInstruction = createStakingInstruction(
-      walletAdapter.publicKey, // token account address
-      nftTokenAccount,
-      nftData.mint.address,
-      nftData.edition.address,
-      // 206. need to import these
-      TOKEN_PROGRAM_ID,
-      METADATA_PROGRAM_ID,
-      // 209. add constants.ts under utils, and import here
-      PROGRAM_ID
-    );
-    // 210.
-    transaction.add(stakeInstruction);
-
-    sendAndConfirmTransaction(transaction);
-  }, [walletAdapter, connection]);
+    // if (!account) 
+      // transaction.add(
+      //   createInitializeStakeAccountInstruction(
+      //     walletAdapter.publicKey,
+      //     nftTokenAccount,
+      //     PROGRAM_ID
+      //   )
+      // );
+      
+      //pre anchor code
+      // const stakeInstruction = createStakingInstruction(
+        //   walletAdapter.publicKey, // token account address
+        //   nftTokenAccount,
+        //   nftData.mint.address,
+        //   nftData.edition.address,
+        //   // 206. need to import these
+        //   TOKEN_PROGRAM_ID,
+        //   METADATA_PROGRAM_ID,
+        //   // 209. add constants.ts under utils, and import here
+        //   PROGRAM_ID
+        // );
+        // 210.
+        
+        
+        await sendAndConfirmTransaction(transaction);
+      }, [walletAdapter, connection, nftData, nftTokenAccount]);
+    
 
   // 213. creating helper function as we will do these steps many times
   const sendAndConfirmTransaction = useCallback(
@@ -162,7 +193,8 @@ export const StakeOptionsDisplay = ({
     if (
       !walletAdapter.connected ||
       !walletAdapter.publicKey ||
-      !nftTokenAccount
+      !nftTokenAccount ||
+      !workspace.program
     ) {
       alert("please connect your wallet");
       return;
@@ -175,30 +207,39 @@ export const StakeOptionsDisplay = ({
       walletAdapter.publicKey
     );
 
-    const account = await connection.getAccountInfo(userStakeATA);
+    // related to not needing to check below
+    // const account = await connection.getAccountInfo(userStakeATA);
 
     const transaction = new Transaction();
 
-    if (!account) {
-      transaction.add(
-        createAssociatedTokenAccountInstruction(
-          walletAdapter.publicKey,
-          userStakeATA,
-          walletAdapter.publicKey,
-          STAKE_MINT
-        )
-      );
-    }
+    // post anchor, don't need to check if it exists or not
+    // if (!account) {
+    //   transaction.add(
+    //     createAssociatedTokenAccountInstruction(
+    //       walletAdapter.publicKey,
+    //       userStakeATA,
+    //       walletAdapter.publicKey,
+    //       STAKE_MINT
+    //     )
+    //   );
+    // }
 
     transaction.add(
-      createRedeemInstruction(
-        walletAdapter.publicKey,
-        nftTokenAccount as PublicKey,
-        nftData.mint.address,
-        userStakeATA,
-        TOKEN_PROGRAM_ID,
-        PROGRAM_ID
-      )
+      await workspace.program.methods.redeem().accounts({
+        nftTokenAccount: nftTokenAccount,
+        stakeMint: STAKE_MINT,
+        userStakeAta: userStakeATA
+      }).instruction()
+
+      // PRE ANCHOR CODE
+      // createRedeemInstruction(
+      //   walletAdapter.publicKey,
+      //   nftTokenAccount as PublicKey,
+      //   nftData.mint.address,
+      //   userStakeATA,
+      //   TOKEN_PROGRAM_ID,
+      //   PROGRAM_ID
+      // )
     );
 
     await sendAndConfirmTransaction(transaction);
@@ -209,44 +250,57 @@ export const StakeOptionsDisplay = ({
     if (
       !walletAdapter.connected ||
       !walletAdapter.publicKey ||
-      !nftTokenAccount
+      !nftTokenAccount ||
+      !workspace.program
     ) {
       alert("please connect your wallet");
       return;
     }
 
-    const userStakeATA = await getAssociatedTokenAddress(
-      STAKE_MINT,
-      walletAdapter.publicKey
-    );
-
-    const account = await connection.getAccountInfo(userStakeATA);
-
     const transaction = new Transaction();
 
-    if (!account) {
-      transaction.add(
-        createAssociatedTokenAccountInstruction(
-          walletAdapter.publicKey,
-          userStakeATA,
-          walletAdapter.publicKey,
-          STAKE_MINT
-        )
-      );
-    }
-
-    transaction.add(
-      createUnstakeInstruction(
-        walletAdapter.publicKey,
-        nftTokenAccount,
-        nftData.mind.address,
-        nftData.edition.address,
+    const userStakeATA = await getAssociatedTokenAddress(
         STAKE_MINT,
-        userStakeATA,
-        TOKEN_PROGRAM_ID,
-        METADATA_PROGRAM_ID,
-        PROGRAM_ID
-      )
+        walletAdapter.publicKey
+      );
+      
+    // PRE ANCHOR CODE
+    // const account = await connection.getAccountInfo(userStakeATA);
+
+
+    // if (!account) {
+    //   transaction.add(
+    //     createAssociatedTokenAccountInstruction(
+    //       walletAdapter.publicKey,
+    //       userStakeATA,
+    //       walletAdapter.publicKey,
+    //       STAKE_MINT
+    //     )
+    //   );
+    // }
+
+    // 314. 
+    transaction.add(
+      await workspace.program.methods.unstake().accounts({
+        nftTokenAccount: nftTokenAccount,
+        nftMint: nftData.mint.address,
+        nftEdition: nftData.edition.address,
+        metadataProgram: METADATA_PROGRAM_ID,
+        stakeMint: STAKE_MINT,
+        userStakeAta: userStakeATA,
+      }).instruction()
+
+      // createUnstakeInstruction(
+      //   walletAdapter.publicKey,
+      //   nftTokenAccount,
+      //   nftData.mind.address,
+      //   nftData.edition.address,
+      //   STAKE_MINT,
+      //   userStakeATA,
+      //   TOKEN_PROGRAM_ID,
+      //   METADATA_PROGRAM_ID,
+      //   PROGRAM_ID
+      // )
     );
 
     await sendAndConfirmTransaction(transaction);
