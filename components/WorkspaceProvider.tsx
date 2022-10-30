@@ -1,14 +1,17 @@
-import { createContext, useContext } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 import {
   Program,
   AnchorProvider,
   Idl,
   setProvider,
 } from "@project-serum/anchor"
-import { AnchorNftStaking, IDL } from "../utils/anchor_nft_staking"
-import { Connection, PublicKey } from "@solana/web3.js"
+import { AnchorNftStaking, IDL as StakingIDL} from "../utils/anchor_nft_staking"
+import { Connection } from "@solana/web3.js"
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react"
-import { PROGRAM_ID } from "../utils/constants"
+import MockWallet from "./MockWallet"
+import { PROGRAM_ID, LOOTBOX_PROGRAM_ID } from "../utils/constants"
+import { AnchorWallet, loadSwitchboardProgram } from "@switchboard-xyz/switchboard-v2"
+import { LootboxProgram, IDL as LootboxIDL } from "../utils/lootbox_program"
 
 const WorkspaceContext = createContext({})
 // -- JAMES's in case I need it
@@ -18,7 +21,9 @@ const programId = PROGRAM_ID
 interface Workspace {
   connection?: Connection
   provider?: AnchorProvider
-  program?: Program<AnchorNftStaking>
+  stakingProgram?: Program<AnchorNftStaking>
+  lootboxProgram?: Program<LootboxProgram>
+  switchboardProgram?: any
 }
 
 const WorkspaceProvider = ({ children }: any) => {
@@ -28,11 +33,32 @@ const WorkspaceProvider = ({ children }: any) => {
   const provider = new AnchorProvider(connection, wallet, {})
   setProvider(provider)
 
-  const program = new Program(IDL as Idl, programId)
+  const [switchboardProgram, setSwitchboardProgram] = useState<any>()
+  const stakingProgram = new Program(StakingIDL as Idl, PROGRAM_ID)
+  const lootboxProgram = new Program(LootboxIDL as Idl, LOOTBOX_PROGRAM_ID)
+
+  async function program() {
+    let response = await loadSwitchboardProgram(
+      "devnet",
+      connection,
+      ((provider as AnchorProvider).wallet as AnchorWallet).payer
+    )
+    return response
+  }
+
+  useEffect(() => {
+    program().then((result) => {
+      setSwitchboardProgram(result)
+      console.log("result: ", result)
+    })
+  },[connection])
+
   const workspace = {
     connection,
     provider,
-    program,
+    stakingProgram,
+    lootboxProgram,
+    switchboardProgram,
   }
 
   return (
@@ -46,12 +72,12 @@ const useWorkspace = (): Workspace => {
   return useContext(WorkspaceContext)
 }
 
-import { Keypair } from "@solana/web3.js"
+// import { Keypair } from "@solana/web3.js"
 
-const MockWallet = {
-  publicKey: Keypair.generate().publicKey,
-  signTransaction: () => Promise.reject(),
-  signAllTransactions: () => Promise.reject(),
-}
+// const MockWallet = {
+//   publicKey: Keypair.generate().publicKey,
+//   signTransaction: () => Promise.reject(),
+//   signAllTransactions: () => Promise.reject(),
+// }
 
 export { WorkspaceProvider, useWorkspace }
